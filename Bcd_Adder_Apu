@@ -1,0 +1,78 @@
+module half_adder(sum,carry,a,b);
+output sum, carry;
+input a,b;
+xor(sum, a, b);
+and(carry, a,b);
+endmodule
+
+module full_adder(sum, carry, a, b, cin);
+output sum, carry;
+input a,b,cin;
+wire w1,w2,w3;
+
+half_adder h1(w1,w2,a,b);
+half_adder h2(sum,w3,w1,cin);
+or(carry,w2,w3);
+endmodule
+
+module four_bit_adder(sum, carry, a, b, cin);
+output [3:0] sum;
+output carry;
+input [3:0] a,b;
+input cin;
+
+wire [2:0] w;
+
+full_adder f1(sum[0], w[0], a[0], b[0], cin);
+full_adder f2(sum[1], w[1], a[1], b[1], w[0]);
+full_adder f3(sum[2], w[2], a[2], b[2], w[1]);
+full_adder f4(sum[3], carry, a[3], b[3], w[2]);
+
+endmodule
+
+module bcd_adder(sum, carry, a, b, cin);
+output [3:0] sum;
+output carry;
+input [3:0] a,b;
+input cin;
+
+wire [3:0] s,b0;
+wire [2:0] w;
+wire c1, c2;
+
+// First addition
+four_bit_adder fba1(s, c1, a, b, cin);
+
+// Correction logic
+and(w[0], s[3], s[2]);
+and(w[1], s[3], s[1]);
+or(w[2], c1, w[0], w[1]);
+
+// Add 6 if needed
+assign b0[0] = 1'b0;
+assign b0[1] = w[2];
+assign b0[2] = w[2];
+assign b0[3] = 1'b0;
+
+// Second addition
+four_bit_adder fba2(sum, c2, s, b0, 1'b0);
+
+assign carry = w[2];
+
+endmodule
+
+module bcd_adder_tb();
+
+wire [3:0] sum;
+wire carry;
+reg [3:0] a,b;
+reg cin;
+
+bcd_adder uut(sum, carry, a, b, cin);
+
+initial begin
+a = 4'b0000; b = 4'b0001; cin = 1'b0; #100;
+a = 4'b1000; b = 4'b1001; cin = 1'b0; #100;
+end
+
+endmodule
